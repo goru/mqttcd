@@ -5,7 +5,7 @@
 int main(int argc, char** argv) {
     int ret;
 
-    option_t option;
+    mqttcd_option_t option;
     ret = parse_arguments(argc, argv, &option);
     if (ret != MQTTCD_SUCCEEDED) {
         return ret;
@@ -35,11 +35,11 @@ int main(int argc, char** argv) {
     return MQTTCD_SUCCEEDED;
 }
 
-int parse_arguments(int argc, char** argv, option_t* option) {
+int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_connect(option_t* option, int* sock) {
+int mqtt_connect(mqttcd_option_t* option, int* sock) {
     // connect to mqtt broker
     int s = transport_open(option->host, option->port);
     if(s < 0) {
@@ -51,7 +51,7 @@ int mqtt_connect(option_t* option, int* sock) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_initialize_connection(int sock, option_t* option) {
+int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;

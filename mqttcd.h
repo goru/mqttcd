@@ -10,7 +10,7 @@
 
 #define BUFFER_LENGTH 1000
 
-enum mqttcd_error {
+enum mqttcd_status {
     MQTTCD_SUCCEEDED,
     MQTTCD_OPEN_FAILED,
     MQTTCD_SERIALIZE_FAILED,
@@ -20,7 +20,7 @@ enum mqttcd_error {
     MQTTCD_INTERRUPTED
 };
 
-typedef struct _option {
+typedef struct _mqttcd_option {
     char* host;
     int port;
     int version;
@@ -28,12 +28,12 @@ typedef struct _option {
     char* username;
     char* password;
     char* topic;
-} option_t;
+} mqttcd_option_t;
 
-int parse_arguments(int argc, char** argv, option_t* option);
+int parse_arguments(int argc, char** argv, mqttcd_option_t* option);
 
-int mqtt_connect(option_t* option, int* sock);
-int mqtt_initialize_connection(int sock, option_t* option);
+int mqtt_connect(mqttcd_option_t* option, int* sock);
+int mqtt_initialize_connection(int sock, mqttcd_option_t* option);
 int mqtt_read_publish();
 int mqtt_send_ping(int sock);
 int mqtt_finalize_connection(int sock);
