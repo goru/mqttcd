@@ -8,12 +8,14 @@ int main(int argc, char** argv) {
     mqttcd_option_t option;
     ret = parse_arguments(argc, argv, &option);
     if (ret != MQTTCD_SUCCEEDED) {
+        free_arguments(&option);
         return ret;
     }
 
     int sock;
     ret = mqtt_connect(&option, &sock);
     if (ret != MQTTCD_SUCCEEDED) {
+        free_arguments(&option);
         return ret;
     }
 
@@ -29,13 +31,119 @@ int main(int argc, char** argv) {
 
     ret = mqtt_disconnect(sock);
     if (ret != MQTTCD_SUCCEEDED) {
+        free_arguments(&option);
         return ret;
+    }
+
+    free_arguments(&option);
+    return MQTTCD_SUCCEEDED;
+}
+
+int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
+    struct option options[] = {
+        { "host",      required_argument, NULL, 0 },
+        { "port",      required_argument, NULL, 0 },
+        { "version",   required_argument, NULL, 0 },
+        { "client_id", required_argument, NULL, 0 },
+        { "username",  required_argument, NULL, 0 },
+        { "password",  required_argument, NULL, 0 },
+        { "topic",     required_argument, NULL, 0 },
+        { 0,           0,                 0,    0 }
+    };
+
+    char** raw_options[] = {
+        &option->raw_option.host,
+        &option->raw_option.port,
+        &option->raw_option.version,
+        &option->raw_option.client_id,
+        &option->raw_option.username,
+        &option->raw_option.password,
+        &option->raw_option.topic
+    };
+
+    // initialize variables
+    for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
+        *(raw_options[i]) = NULL;
+    }
+
+    // parse command line arguments
+    int result;
+    int index;
+    while ((result = getopt_long(argc, argv, "", options, &index)) != -1) {
+        if (result != 0) {
+            return MQTTCD_PARSE_ARG_FAILED;
+        }
+
+        if (options[index].has_arg != no_argument) {
+            int length = strlen(optarg) + 1;
+            *(raw_options[index]) = malloc(length);
+            strncpy(*(raw_options[index]), optarg, length);
+        }
+    }
+
+    // check parsed arguments
+    if (option->raw_option.host != NULL) {
+        option->host = option->raw_option.host;
+    } else {
+        return MQTTCD_PARSE_ARG_FAILED;
+    }
+
+    if (option->raw_option.port != NULL) {
+        option->port = atoi(option->raw_option.port);
+    } else {
+        option->port = 1883; // default is 1883.
+    }
+
+    if (option->raw_option.version != NULL) {
+        option->version = atoi(option->raw_option.version);
+    } else {
+        option->version = 3; // default is 3. 3 or 4.
+    }
+
+    if (option->raw_option.client_id != NULL) {
+        option->client_id = option->raw_option.client_id;
+    } else {
+        return MQTTCD_PARSE_ARG_FAILED;
+    }
+
+    if (option->raw_option.username != NULL) {
+        option->username = option->raw_option.username;
+    } else {
+        return MQTTCD_PARSE_ARG_FAILED;
+    }
+
+    if (option->raw_option.password != NULL) {
+        option->password = option->raw_option.password;
+    } else {
+        return MQTTCD_PARSE_ARG_FAILED;
+    }
+
+    if (option->raw_option.topic != NULL) {
+        option->topic = option->raw_option.topic;
+    } else {
+        return MQTTCD_PARSE_ARG_FAILED;
     }
 
     return MQTTCD_SUCCEEDED;
 }
 
-int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
+int free_arguments(mqttcd_option_t* option) {
+    char** raw_options[] = {
+        &option->raw_option.host,
+        &option->raw_option.port,
+        &option->raw_option.version,
+        &option->raw_option.client_id,
+        &option->raw_option.username,
+        &option->raw_option.password,
+        &option->raw_option.topic
+    };
+
+    for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
+        if (*(raw_options[i]) != NULL) {
+            free(*(raw_options[i]));
+        }
+    }
+
     return MQTTCD_SUCCEEDED;
 }
 

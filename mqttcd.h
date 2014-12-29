@@ -12,6 +12,7 @@
 
 enum mqttcd_status {
     MQTTCD_SUCCEEDED,
+    MQTTCD_PARSE_ARG_FAILED,
     MQTTCD_OPEN_FAILED,
     MQTTCD_SERIALIZE_FAILED,
     MQTTCD_DESERIALIZE_FAILED,
@@ -20,7 +21,18 @@ enum mqttcd_status {
     MQTTCD_INTERRUPTED
 };
 
+typedef struct _mqttcd_raw_option {
+    char* host;
+    char* port;
+    char* version;
+    char* client_id;
+    char* username;
+    char* password;
+    char* topic;
+} mqttcd_raw_option_t;
+
 typedef struct _mqttcd_option {
+    mqttcd_raw_option_t raw_option;
     char* host;
     int port;
     int version;
@@ -31,6 +43,7 @@ typedef struct _mqttcd_option {
 } mqttcd_option_t;
 
 int parse_arguments(int argc, char** argv, mqttcd_option_t* option);
+int free_arguments(mqttcd_option_t* option);
 
 int mqtt_connect(mqttcd_option_t* option, int* sock);
 int mqtt_initialize_connection(int sock, mqttcd_option_t* option);
