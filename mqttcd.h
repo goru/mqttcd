@@ -38,7 +38,6 @@ typedef struct _mqttcd_raw_option {
 } mqttcd_raw_option_t;
 
 typedef struct _mqttcd_option {
-    mqttcd_raw_option_t raw_option;
     char* host;
     int port;
     int version;
@@ -49,15 +48,21 @@ typedef struct _mqttcd_option {
     int daemonize;
 } mqttcd_option_t;
 
+typedef struct _mqttcd_context {
+    mqttcd_raw_option_t raw_option;
+    mqttcd_option_t option;
+    int mqtt_socket;
+} mqttcd_context_t;
+
 static int MQTTCD_INTERRUPTED_SIGNAL = 0;
 void signal_handler(int signum);
 
-int parse_arguments(int argc, char** argv, mqttcd_option_t* option);
-int free_arguments(mqttcd_option_t* option);
+int parse_arguments(mqttcd_context_t* context, int argc, char** argv);
+int free_arguments(mqttcd_context_t* context);
 
-int mqtt_connect(mqttcd_option_t* option, int* sock);
-int mqtt_initialize_connection(int sock, mqttcd_option_t* option);
-int mqtt_read_publish();
-int mqtt_send_ping(int sock);
-int mqtt_finalize_connection(int sock);
-int mqtt_disconnect(int sock);
+int mqtt_connect(mqttcd_context_t* context);
+int mqtt_initialize_connection(mqttcd_context_t* context);
+int mqtt_read_publish(mqttcd_context_t* context);
+int mqtt_send_ping(mqttcd_context_t* context);
+int mqtt_finalize_connection(mqttcd_context_t* context);
+int mqtt_disconnect(mqttcd_context_t* context);

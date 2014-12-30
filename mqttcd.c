@@ -4,27 +4,27 @@
 
 int main(int argc, char** argv) {
     int ret;
+    mqttcd_context_t context;
 
     // parse command line arguments
-    mqttcd_option_t option;
-    ret = parse_arguments(argc, argv, &option);
+    ret = parse_arguments(&context, argc, argv);
     if (ret != MQTTCD_SUCCEEDED) {
-        free_arguments(&option);
+        free_arguments(&context);
         return ret;
     }
 
     // daemonize
-    if (option.daemonize == 1) {
+    if (context.option.daemonize == 1) {
         ret = fork();
         // fork is failed
         if (ret == -1) {
-            free_arguments(&option);
+            free_arguments(&context);
             return MQTTCD_FORK_FAILED;
         }
 
         // exit parent process with child process number
         if (ret != 0) {
-            free_arguments(&option);
+            free_arguments(&context);
             return ret;
         }
 
@@ -45,43 +45,42 @@ int main(int argc, char** argv) {
 
     // setup signal handler
     if (signal(SIGINT, signal_handler) == SIG_ERR) {
-        free_arguments(&option);
+        free_arguments(&context);
         return MQTTCD_SETUP_SIGNAL_FAILED;
     }
     if (signal(SIGTERM, signal_handler) == SIG_ERR) {
-        free_arguments(&option);
+        free_arguments(&context);
         return MQTTCD_SETUP_SIGNAL_FAILED;
     }
 
     // connect to mqtt broker
-    int sock;
-    ret = mqtt_connect(&option, &sock);
+    ret = mqtt_connect(&context);
     if (ret != MQTTCD_SUCCEEDED) {
-        free_arguments(&option);
+        free_arguments(&context);
         return ret;
     }
 
     // initialize connection and subscribe mqtt topic
-    ret = mqtt_initialize_connection(sock, &option);
+    ret = mqtt_initialize_connection(&context);
     if (ret == MQTTCD_SUCCEEDED) {
         // receive loop
         while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
-            ret = mqtt_read_publish();
-            ret = mqtt_send_ping(sock);
+            ret = mqtt_read_publish(&context);
+            ret = mqtt_send_ping(&context);
         }
 
         // send disconnect packet
-        ret = mqtt_finalize_connection(sock);
+        ret = mqtt_finalize_connection(&context);
     }
 
     // disconnect from mqtt broker
-    ret = mqtt_disconnect(sock);
+    ret = mqtt_disconnect(&context);
     if (ret != MQTTCD_SUCCEEDED) {
-        free_arguments(&option);
+        free_arguments(&context);
         return ret;
     }
 
-    free_arguments(&option);
+    free_arguments(&context);
     return MQTTCD_SUCCEEDED;
 }
 
@@ -89,7 +88,7 @@ void signal_handler(int signum) {
     MQTTCD_INTERRUPTED_SIGNAL = 1;
 }
 
-int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
+int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
     struct option options[] = {
         { "host",      required_argument, NULL, 0 },
         { "port",      required_argument, NULL, 0 },
@@ -103,14 +102,14 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
     };
 
     char** raw_options[] = {
-        &option->raw_option.host,
-        &option->raw_option.port,
-        &option->raw_option.version,
-        &option->raw_option.client_id,
-        &option->raw_option.username,
-        &option->raw_option.password,
-        &option->raw_option.topic,
-        &option->raw_option.daemonize
+        &context->raw_option.host,
+        &context->raw_option.port,
+        &context->raw_option.version,
+        &context->raw_option.client_id,
+        &context->raw_option.username,
+        &context->raw_option.password,
+        &context->raw_option.topic,
+        &context->raw_option.daemonize
     };
 
     // initialize variables
@@ -137,67 +136,67 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
     }
 
     // check parsed arguments
-    if (option->raw_option.host != NULL) {
-        option->host = option->raw_option.host;
+    if (context->raw_option.host != NULL) {
+        context->option.host = context->raw_option.host;
     } else {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
-    if (option->raw_option.port != NULL) {
-        option->port = atoi(option->raw_option.port);
+    if (context->raw_option.port != NULL) {
+        context->option.port = atoi(context->raw_option.port);
     } else {
-        option->port = 1883; // default is 1883.
+        context->option.port = 1883; // default is 1883.
     }
 
-    if (option->raw_option.version != NULL) {
-        option->version = atoi(option->raw_option.version);
+    if (context->raw_option.version != NULL) {
+        context->option.version = atoi(context->raw_option.version);
     } else {
-        option->version = 3; // default is 3. 3 or 4.
+        context->option.version = 3; // default is 3. 3 or 4.
     }
 
-    if (option->raw_option.client_id != NULL) {
-        option->client_id = option->raw_option.client_id;
+    if (context->raw_option.client_id != NULL) {
+        context->option.client_id = context->raw_option.client_id;
     } else {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
-    if (option->raw_option.username != NULL) {
-        option->username = option->raw_option.username;
+    if (context->raw_option.username != NULL) {
+        context->option.username = context->raw_option.username;
     } else {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
-    if (option->raw_option.password != NULL) {
-        option->password = option->raw_option.password;
+    if (context->raw_option.password != NULL) {
+        context->option.password = context->raw_option.password;
     } else {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
-    if (option->raw_option.topic != NULL) {
-        option->topic = option->raw_option.topic;
+    if (context->raw_option.topic != NULL) {
+        context->option.topic = context->raw_option.topic;
     } else {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
-    if (option->raw_option.daemonize != NULL) {
-        option->daemonize = 1;
+    if (context->raw_option.daemonize != NULL) {
+        context->option.daemonize = 1;
     } else {
-        option->daemonize = 0; // default is not daemonize
+        context->option.daemonize = 0; // default is not daemonize
     }
 
     return MQTTCD_SUCCEEDED;
 }
 
-int free_arguments(mqttcd_option_t* option) {
+int free_arguments(mqttcd_context_t* context) {
     char** raw_options[] = {
-        &option->raw_option.host,
-        &option->raw_option.port,
-        &option->raw_option.version,
-        &option->raw_option.client_id,
-        &option->raw_option.username,
-        &option->raw_option.password,
-        &option->raw_option.topic,
-        &option->raw_option.daemonize
+        &context->raw_option.host,
+        &context->raw_option.port,
+        &context->raw_option.version,
+        &context->raw_option.client_id,
+        &context->raw_option.username,
+        &context->raw_option.password,
+        &context->raw_option.topic,
+        &context->raw_option.daemonize
     };
 
     for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
@@ -209,19 +208,19 @@ int free_arguments(mqttcd_option_t* option) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_connect(mqttcd_option_t* option, int* sock) {
+int mqtt_connect(mqttcd_context_t* context) {
     // connect to mqtt broker
-    int s = transport_open(option->host, option->port);
-    if(s < 0) {
+    int sock = transport_open(context->option.host, context->option.port);
+    if(sock < 0) {
         return MQTTCD_OPEN_FAILED;
     }
 
-    *sock = s;
+    context->mqtt_socket = sock;
 
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
+int mqtt_initialize_connection(mqttcd_context_t* context) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;
@@ -229,12 +228,12 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
 
     // create packet for connection data
     MQTTPacket_connectData conn_data = MQTTPacket_connectData_initializer;
-    conn_data.MQTTVersion = option->version;
-    conn_data.clientID.cstring = option->client_id;
+    conn_data.MQTTVersion = context->option.version;
+    conn_data.clientID.cstring = context->option.client_id;
     conn_data.keepAliveInterval = 20;
     conn_data.cleansession = 1;
-    conn_data.username.cstring = option->username;
-    conn_data.password.cstring = option->password;
+    conn_data.username.cstring = context->option.username;
+    conn_data.password.cstring = context->option.password;
 
     packet_len = MQTTSerialize_connect(buf, BUFFER_LENGTH, &conn_data);
     if (packet_len <= 0) {
@@ -242,7 +241,7 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
     }
 
     // send connection data
-    send_result = transport_sendPacketBuffer(sock, buf, packet_len);
+    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
     }
@@ -259,7 +258,7 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
     int count = 1;
 
     MQTTString topic= MQTTString_initializer;
-    topic.cstring = option->topic;
+    topic.cstring = context->option.topic;
 
     int qos = 0;
 
@@ -269,7 +268,7 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
     }
 
     // send subscribe packet
-    send_result = transport_sendPacketBuffer(sock, buf, packet_len);
+    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
     }
@@ -283,7 +282,7 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_read_publish() {
+int mqtt_read_publish(mqttcd_context_t* context) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;
@@ -313,7 +312,7 @@ int mqtt_read_publish() {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_send_ping(int sock) {
+int mqtt_send_ping(mqttcd_context_t* context) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;
@@ -325,7 +324,7 @@ int mqtt_send_ping(int sock) {
     }
 
     // send ping packet for keep connection
-    send_result = transport_sendPacketBuffer(sock, buf, packet_len);
+    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
     }
@@ -333,7 +332,7 @@ int mqtt_send_ping(int sock) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_finalize_connection(int sock) {
+int mqtt_finalize_connection(mqttcd_context_t* context) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;
@@ -345,7 +344,7 @@ int mqtt_finalize_connection(int sock) {
     }
 
     // send disconnect packet
-    send_result = transport_sendPacketBuffer(sock, buf, packet_len);
+    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
     }
@@ -353,9 +352,9 @@ int mqtt_finalize_connection(int sock) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_disconnect(int sock) {
+int mqtt_disconnect(mqttcd_context_t* context) {
     // disconnect
-    transport_close(sock);
+    transport_close(context->mqtt_socket);
     return MQTTCD_SUCCEEDED;
 }
 
