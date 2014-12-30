@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdarg.h>
 
 #include "MQTTPacket.h"
 #include "transport.h"
@@ -23,6 +24,7 @@ enum mqttcd_status {
     MQTTCD_SERIALIZE_FAILED,
     MQTTCD_DESERIALIZE_FAILED,
     MQTTCD_SEND_PACKET_FAILED,
+    MQTTCD_READ_PACKET_TIMEOUT,
     MQTTCD_PACKET_TYPE_MISMATCHED
 };
 
@@ -52,7 +54,15 @@ typedef struct _mqttcd_context {
     mqttcd_raw_option_t raw_option;
     mqttcd_option_t option;
     int mqtt_socket;
+    FILE* logger;
 } mqttcd_context_t;
+
+int logger_open(mqttcd_context_t* context);
+int logger_close(mqttcd_context_t* context);
+
+void logger_error(mqttcd_context_t* context, const char* format, ...);
+void logger_info(mqttcd_context_t* context, const char* format, ...);
+void logger_debug(mqttcd_context_t* context, const char* format, ...);
 
 static int MQTTCD_INTERRUPTED_SIGNAL = 0;
 void signal_handler(int signum);
@@ -65,4 +75,4 @@ int mqtt_initialize_connection(mqttcd_context_t* context);
 int mqtt_read_publish(mqttcd_context_t* context);
 int mqtt_send_ping(mqttcd_context_t* context);
 int mqtt_finalize_connection(mqttcd_context_t* context);
-int mqtt_disconnect(mqttcd_context_t* context);
+void mqtt_disconnect(mqttcd_context_t* context);
