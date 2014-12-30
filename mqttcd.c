@@ -73,10 +73,13 @@ int main(int argc, char** argv) {
         // receive loop
         int count = 0;
         while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
-            ret = mqtt_read_publish(&context);
-            count++;
+            char* payload = NULL;
+            ret = mqtt_read_publish(&context, &payload);
+            if (ret == MQTTCD_SUCCEEDED && payload != NULL) {
+                free(payload);
+            }
 
-            if (count > 30) {
+            if (count++ > 30) {
                 ret = mqtt_send_ping(&context);
                 if (ret != MQTTCD_SUCCEEDED) {
                     break;
@@ -368,7 +371,7 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_read_publish(mqttcd_context_t* context) {
+int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
     int send_result;
@@ -404,6 +407,12 @@ int mqtt_read_publish(mqttcd_context_t* context) {
         return MQTTCD_DESERIALIZE_FAILED;
     }
     logger_debug(context, "ok\n");
+
+    *payload = malloc(payloadlen_in + 1);
+    strncpy(*payload, (const char*)payload_in, payloadlen_in);
+    (*payload)[payloadlen_in] = '\0';
+
+    logger_info(context, "received payload is: %s\n", *payload);
 
     return MQTTCD_SUCCEEDED;
 }

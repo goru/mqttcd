@@ -13,7 +13,7 @@
 #include "MQTTPacket.h"
 #include "transport.h"
 
-#define BUFFER_LENGTH 1000
+#define BUFFER_LENGTH 4096
 
 enum mqttcd_status {
     MQTTCD_SUCCEEDED,
@@ -72,7 +72,7 @@ int free_arguments(mqttcd_context_t* context);
 
 int mqtt_connect(mqttcd_context_t* context);
 int mqtt_initialize_connection(mqttcd_context_t* context);
-int mqtt_read_publish(mqttcd_context_t* context);
+int mqtt_read_publish(mqttcd_context_t* context, char** payload);
 int mqtt_send_ping(mqttcd_context_t* context);
 int mqtt_finalize_connection(mqttcd_context_t* context);
 void mqtt_disconnect(mqttcd_context_t* context);
