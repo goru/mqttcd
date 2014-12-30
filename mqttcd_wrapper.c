@@ -1,4 +1,4 @@
-/* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=0 : */
+/* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=4 : */
 
 #include "mqttcd_wrapper.h"
 

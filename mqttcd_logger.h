@@ -1,4 +1,4 @@
-/* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=0 : */
+/* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=4 : */
 
 #ifndef mqttcd_logger_h
 #define mqttcd_logger_h
