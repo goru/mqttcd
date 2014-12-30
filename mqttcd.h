@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
@@ -14,12 +13,10 @@
 
 #include "mqttcd_type.h"
 #include "mqttcd_logger.h"
+#include "mqttcd_arg.h"
 
 static int MQTTCD_INTERRUPTED_SIGNAL = 0;
 void signal_handler(int signum);
-
-int parse_arguments(mqttcd_context_t* context, int argc, char** argv);
-int free_arguments(mqttcd_context_t* context);
 
 int mqtt_connect(mqttcd_context_t* context);
 int mqtt_initialize_connection(mqttcd_context_t* context);
