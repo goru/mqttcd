@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
         return ret;
     }
 
+    // connect to mqtt broker
     int sock;
     ret = mqtt_connect(&option, &sock);
     if (ret != MQTTCD_SUCCEEDED) {
@@ -28,16 +29,20 @@ int main(int argc, char** argv) {
         return ret;
     }
 
+    // initialize connection and subscribe mqtt topic
     ret = mqtt_initialize_connection(sock, &option);
     if (ret == MQTTCD_SUCCEEDED) {
+        // receive loop
         while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
             ret = mqtt_read_publish();
             ret = mqtt_send_ping(sock);
         }
 
+        // send disconnect packet
         ret = mqtt_finalize_connection(sock);
     }
 
+    // disconnect from mqtt broker
     ret = mqtt_disconnect(sock);
     if (ret != MQTTCD_SUCCEEDED) {
         free_arguments(&option);
@@ -192,7 +197,7 @@ int mqtt_initialize_connection(int sock, mqttcd_option_t* option) {
         return MQTTCD_SERIALIZE_FAILED;
     }
 
-    // send connection options
+    // send connection data
     send_result = transport_sendPacketBuffer(sock, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
@@ -269,12 +274,13 @@ int mqtt_send_ping(int sock) {
     int packet_len;
     int send_result;
 
-    // send ping packet for keep connection
+    // create ping packet
     packet_len = MQTTSerialize_pingreq(buf, BUFFER_LENGTH);
     if (packet_len <= 0) {
         return MQTTCD_SERIALIZE_FAILED;
     }
 
+    // send ping packet for keep connection
     send_result = transport_sendPacketBuffer(sock, buf, packet_len);
     if (send_result != packet_len) {
         return MQTTCD_SEND_PACKET_FAILED;
