@@ -144,11 +144,13 @@ void logger_info(mqttcd_context_t* context, const char* format, ...) {
 }
 
 void logger_debug(mqttcd_context_t* context, const char* format, ...) {
+#ifdef DEBUG
     va_list arg;
     va_start(arg, format);
     vfprintf(context->logger, format, arg);
     va_end(arg);
     fflush(context->logger);
+#endif
 }
 
 void signal_handler(int signum) {
@@ -383,7 +385,7 @@ int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     logger_debug(context, "reading publish packet... ");
     packet_type = MQTTPacket_read(buf, BUFFER_LENGTH, transport_getdata);
     if (packet_type == -1) {
-        logger_error(context, "couldn't read publish packet\n");
+        logger_debug(context, "couldn't read publish packet\n");
         return MQTTCD_READ_PACKET_TIMEOUT;
     }
     if (packet_type != PUBLISH) {
@@ -413,7 +415,7 @@ int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     strncpy(*payload, (const char*)payload_in, payloadlen_in);
     (*payload)[payloadlen_in] = '\0';
 
-    logger_info(context, "received payload is: %s\n", *payload);
+    logger_info(context, "%s\n", *payload);
 
     return MQTTCD_SUCCEEDED;
 }

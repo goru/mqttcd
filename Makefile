@@ -7,9 +7,13 @@ MQTT_SRCS=$(MQTT_SRC_DIR)/MQTTConnectClient.c $(MQTT_SRC_DIR)/MQTTSerializePubli
 CFLAGS=-I$(MQTT_SRC_DIR) -I$(MQTT_SAMPLE_DIR)
 LDLIBS=
 
+ifdef DEBUG
+DEBUG_MACRO=-DDEBUG
+endif
+
 all:
 	gcc -Wall -c $(MQTT_DIR)/samples/transport.c -Os
-	gcc mqttcd.c transport.o -o mqttcd $(MQTT_SRCS) $(CFLAGS) $(LDLIBS)
+	gcc mqttcd.c transport.o -o mqttcd $(MQTT_SRCS) $(CFLAGS) $(LDLIBS) $(DEBUG_MACRO)
 
 clean:
 	rm -f transport.o mqttcd
