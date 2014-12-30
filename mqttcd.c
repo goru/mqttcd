@@ -71,9 +71,18 @@ int main(int argc, char** argv) {
     ret = mqtt_initialize_connection(&context);
     if (ret == MQTTCD_SUCCEEDED) {
         // receive loop
+        int count = 0;
         while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
             ret = mqtt_read_publish(&context);
-            ret = mqtt_send_ping(&context);
+            count++;
+
+            if (count > 30) {
+                ret = mqtt_send_ping(&context);
+                if (ret != MQTTCD_SUCCEEDED) {
+                    break;
+                }
+                count = 0;
+            }
         }
 
         // send disconnect packet
