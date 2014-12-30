@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <signal.h>
 
 #include "MQTTPacket.h"
 #include "transport.h"
@@ -12,6 +13,7 @@
 
 enum mqttcd_status {
     MQTTCD_SUCCEEDED,
+    MQTTCD_SETUP_SIGNAL_FAILED,
     MQTTCD_PARSE_ARG_FAILED,
     MQTTCD_OPEN_FAILED,
     MQTTCD_SERIALIZE_FAILED,
@@ -41,6 +43,9 @@ typedef struct _mqttcd_option {
     char* password;
     char* topic;
 } mqttcd_option_t;
+
+static int MQTTCD_INTERRUPTED_SIGNAL = 0;
+void signal_handler(int signum);
 
 int parse_arguments(int argc, char** argv, mqttcd_option_t* option);
 int free_arguments(mqttcd_option_t* option);

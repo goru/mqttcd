@@ -5,6 +5,15 @@
 int main(int argc, char** argv) {
     int ret;
 
+    // setup signal handler
+    if (SIG_ERR == signal(SIGINT, signal_handler)) {
+        return MQTTCD_SETUP_SIGNAL_FAILED;
+    }
+    if (SIG_ERR == signal(SIGTERM, signal_handler)) {
+        return MQTTCD_SETUP_SIGNAL_FAILED;
+    }
+
+    // parse command line arguments
     mqttcd_option_t option;
     ret = parse_arguments(argc, argv, &option);
     if (ret != MQTTCD_SUCCEEDED) {
@@ -21,7 +30,7 @@ int main(int argc, char** argv) {
 
     ret = mqtt_initialize_connection(sock, &option);
     if (ret == MQTTCD_SUCCEEDED) {
-        while (1) {
+        while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
             ret = mqtt_read_publish();
             ret = mqtt_send_ping(sock);
         }
@@ -37,6 +46,10 @@ int main(int argc, char** argv) {
 
     free_arguments(&option);
     return MQTTCD_SUCCEEDED;
+}
+
+void signal_handler(int signum) {
+    MQTTCD_INTERRUPTED_SIGNAL = 1;
 }
 
 int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
