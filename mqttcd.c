@@ -5,20 +5,52 @@
 int main(int argc, char** argv) {
     int ret;
 
-    // setup signal handler
-    if (SIG_ERR == signal(SIGINT, signal_handler)) {
-        return MQTTCD_SETUP_SIGNAL_FAILED;
-    }
-    if (SIG_ERR == signal(SIGTERM, signal_handler)) {
-        return MQTTCD_SETUP_SIGNAL_FAILED;
-    }
-
     // parse command line arguments
     mqttcd_option_t option;
     ret = parse_arguments(argc, argv, &option);
     if (ret != MQTTCD_SUCCEEDED) {
         free_arguments(&option);
         return ret;
+    }
+
+    // daemonize
+    if (option.daemonize == 1) {
+        ret = fork();
+        // fork is failed
+        if (ret == -1) {
+            free_arguments(&option);
+            return MQTTCD_FORK_FAILED;
+        }
+
+        // exit parent process with child process number
+        if (ret != 0) {
+            free_arguments(&option);
+            return ret;
+        }
+
+        // child process
+        // close stdin, stdout, stderr
+        close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
+        // create new session (disconnect from current terminal)
+        setsid();
+        // change working directory
+        chdir("/");
+        // reset umask
+        umask(0);
+        // ignore SIGCHLD for avoiding zombie process
+        signal(SIGCHLD, SIG_IGN);
+    }
+
+    // setup signal handler
+    if (signal(SIGINT, signal_handler) == SIG_ERR) {
+        free_arguments(&option);
+        return MQTTCD_SETUP_SIGNAL_FAILED;
+    }
+    if (signal(SIGTERM, signal_handler) == SIG_ERR) {
+        free_arguments(&option);
+        return MQTTCD_SETUP_SIGNAL_FAILED;
     }
 
     // connect to mqtt broker
@@ -66,6 +98,7 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
         { "username",  required_argument, NULL, 0 },
         { "password",  required_argument, NULL, 0 },
         { "topic",     required_argument, NULL, 0 },
+        { "daemonize", no_argument,       NULL, 0 },
         { 0,           0,                 0,    0 }
     };
 
@@ -76,7 +109,8 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
         &option->raw_option.client_id,
         &option->raw_option.username,
         &option->raw_option.password,
-        &option->raw_option.topic
+        &option->raw_option.topic,
+        &option->raw_option.daemonize
     };
 
     // initialize variables
@@ -96,6 +130,9 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
             int length = strlen(optarg) + 1;
             *(raw_options[index]) = malloc(length);
             strncpy(*(raw_options[index]), optarg, length);
+        } else {
+            *(raw_options[index]) = malloc(1);
+            (*(raw_options[index]))[0] = '\0';
         }
     }
 
@@ -142,6 +179,12 @@ int parse_arguments(int argc, char** argv, mqttcd_option_t* option) {
         return MQTTCD_PARSE_ARG_FAILED;
     }
 
+    if (option->raw_option.daemonize != NULL) {
+        option->daemonize = 1;
+    } else {
+        option->daemonize = 0; // default is not daemonize
+    }
+
     return MQTTCD_SUCCEEDED;
 }
 
@@ -153,7 +196,8 @@ int free_arguments(mqttcd_option_t* option) {
         &option->raw_option.client_id,
         &option->raw_option.username,
         &option->raw_option.password,
-        &option->raw_option.topic
+        &option->raw_option.topic,
+        &option->raw_option.daemonize
     };
 
     for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
