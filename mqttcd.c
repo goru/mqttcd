@@ -24,8 +24,9 @@ int main(int argc, char** argv) {
 
         // exit parent process with child process number
         if (ret != 0) {
+            printf("%d\n", ret);
             free_arguments(&context);
-            return ret;
+            return MQTTCD_SUCCEEDED;
         }
 
         // child process
