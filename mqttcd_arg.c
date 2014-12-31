@@ -27,7 +27,8 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
     };
 
     // initialize variables
-    for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
+    int i;
+    for (i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
         *(raw_options[i]) = NULL;
     }
 
@@ -113,7 +114,8 @@ int free_arguments(mqttcd_context_t* context) {
         &context->raw_option.daemonize
     };
 
-    for (int i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
+    int i;
+    for (i = 0; i < sizeof(raw_options) / sizeof(raw_options[0]); i++) {
         if (*(raw_options[i]) != NULL) {
             free(*(raw_options[i]));
         }
