@@ -3,6 +3,17 @@ mqttcd
 
 [Paho](https://eclipse.org/paho/clients/c/embedded/) based lightweight MQTT client daemon for embedded linux
 
+How to build
+------------
+
+```
+$ git clone https://github.com/lostman-github/mqttcd
+$ cd mqttcd
+$ git submodule init
+$ git submodule update
+$ make
+```
+
 Command line arguments
 ----------------------
 
