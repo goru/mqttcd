@@ -1,21 +1,40 @@
+# common
+OBJS_DIR=./obj
+
+# mqtt directories
 MQTT_DIR=./paho/MQTTPacket
 MQTT_SRC_DIR=$(MQTT_DIR)/src
 MQTT_SAMPLE_DIR=$(MQTT_DIR)/samples
 
-MQTTCD_SRCS=mqttcd.c mqttcd_logger.c mqttcd_arg.c mqttcd_wrapper.c
+# mqtt objects
+MQTT_PACKET_OBJS=MQTTConnectClient.o MQTTSerializePublish.o MQTTPacket.o MQTTSubscribeClient.o MQTTDeserializePublish.o MQTTConnectServer.o MQTTSubscribeServer.o MQTTUnsubscribeServer.o MQTTUnsubscribeClient.o
+MQTT_TRANSPORT_OBJS=transport.o
+MQTT_OBJS=$(patsubst %,$(OBJS_DIR)/%,$(MQTT_PACKET_OBJS)) $(patsubst %,$(OBJS_DIR)/%,$(MQTT_TRANSPORT_OBJS))
 
-MQTT_SRCS=$(MQTT_SRC_DIR)/MQTTConnectClient.c $(MQTT_SRC_DIR)/MQTTSerializePublish.c $(MQTT_SRC_DIR)/MQTTPacket.c $(MQTT_SRC_DIR)/MQTTSubscribeClient.c $(MQTT_SRC_DIR)/MQTTDeserializePublish.c $(MQTT_SRC_DIR)/MQTTConnectServer.c $(MQTT_SRC_DIR)/MQTTSubscribeServer.c $(MQTT_SRC_DIR)/MQTTUnsubscribeServer.c $(MQTT_SRC_DIR)/MQTTUnsubscribeClient.c
-
+# flags
 CFLAGS=-I$(MQTT_SRC_DIR) -I$(MQTT_SAMPLE_DIR)
 LDLIBS=
 
+# macros
 ifdef DEBUG
-DEBUG_MACRO=-DDEBUG
+MACROS+= -DDEBUG
 endif
 
-all:
-	gcc -Wall -c $(MQTT_DIR)/samples/transport.c -Os
-	gcc $(MQTTCD_SRCS) transport.o -o mqttcd $(MQTT_SRCS) $(CFLAGS) $(LDLIBS) $(DEBUG_MACRO)
+# mqttcd objects
+MQTTCD_OBJS=$(patsubst %,$(OBJS_DIR)/%,mqttcd.o mqttcd_logger.o mqttcd_arg.o mqttcd_wrapper.o)
+
+all: $(MQTT_OBJS) $(MQTTCD_OBJS)
+	gcc -o mqttcd $^
+
+$(OBJS_DIR)/%.o: $(MQTT_SRC_DIR)/%.c
+	gcc -o $@ -c $<
+
+$(OBJS_DIR)/%.o: $(MQTT_SAMPLE_DIR)/%.c
+	gcc -o $@ -c $<
+
+$(OBJS_DIR)/%.o: %.c
+	gcc -o $@ $(CFLAGS) $(LDLIBS) $(MACROS) -c $<
 
 clean:
-	rm -f transport.o mqttcd
+	rm -f mqttcd $(OBJS_DIR)/*.o
+
