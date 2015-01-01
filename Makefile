@@ -16,8 +16,11 @@ CFLAGS=-I$(MQTT_SRC_DIR) -I$(MQTT_SAMPLE_DIR)
 LDLIBS=
 
 # macros
-ifdef DEBUG
-MACROS+= -DDEBUG
+ifdef ENABLE_DEBUG
+MACROS+= -DENABLE_DEBUG
+endif
+ifdef ENABLE_SYSLOG
+MACROS+= -DENABLE_SYSLOG
 endif
 
 # mqttcd objects

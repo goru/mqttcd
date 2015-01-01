@@ -14,6 +14,8 @@ $ git submodule update
 $ make
 ```
 
+if execute make command with `ENABLE_SYSLOG=1` , destination of output is changed to syslog when daemonized.
+
 Command line arguments
 ----------------------
 
@@ -26,4 +28,4 @@ Command line arguments
 | --username  | x        |                       |
 | --password  | x        |                       |
 | --topic     | x        |                       |
-| --daemonize |          | if this argument is not specified, received message is written to current terminal.<br>otherwise, message is written to /var/tmp/mqttcd.log |
+| --daemonize |          | if this argument is not specified, received message is written to current terminal.<br>otherwise, message is written to /var/tmp/mqttcd.log or syslog (if enabled) |

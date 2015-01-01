@@ -140,7 +140,7 @@ int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     strncpy(*payload, (const char*)payload_in, payloadlen_in);
     (*payload)[payloadlen_in] = '\0';
 
-    logger_info(context, "%s\n", *payload);
+    logger_notice(context, "%s\n", *payload);
 
     return MQTTCD_SUCCEEDED;
 }
