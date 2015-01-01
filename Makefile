@@ -24,7 +24,7 @@ MACROS+= -DENABLE_SYSLOG
 endif
 
 # mqttcd objects
-MQTTCD_OBJS=$(patsubst %,$(OBJS_DIR)/%,mqttcd.o mqttcd_logger.o mqttcd_arg.o mqttcd_wrapper.o)
+MQTTCD_OBJS=$(patsubst %,$(OBJS_DIR)/%,mqttcd.o mqttcd_logger.o mqttcd_arg.o mqttcd_wrapper.o mqttcd_fork.o)
 
 all: $(MQTT_OBJS) $(MQTTCD_OBJS)
 	gcc -o mqttcd $^

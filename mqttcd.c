@@ -15,33 +15,19 @@ int main(int argc, char** argv) {
 
     // daemonize
     if (context.option.daemonize == 1) {
-        ret = fork();
-        // fork is failed
-        if (ret == -1) {
+        int pid;
+        ret = fork_current_process(&pid);
+        if (ret != MQTTCD_SUCCEEDED) {
             free_arguments(&context);
-            return MQTTCD_FORK_FAILED;
+            return ret;
         }
 
         // exit parent process with child process number
-        if (ret != 0) {
-            printf("%d\n", ret);
+        if (pid != 0) {
+            printf("%d\n", pid);
             free_arguments(&context);
             return MQTTCD_SUCCEEDED;
         }
-
-        // child process
-        // close stdin, stdout, stderr
-        close(STDIN_FILENO);
-        close(STDOUT_FILENO);
-        close(STDERR_FILENO);
-        // create new session (disconnect from current terminal)
-        setsid();
-        // change working directory
-        chdir("/");
-        // reset umask
-        umask(0);
-        // ignore SIGCHLD for avoiding zombie process
-        signal(SIGCHLD, SIG_IGN);
     }
 
     // setup signal handler
