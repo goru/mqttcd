@@ -69,23 +69,35 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
         context->option.version = 3; // default is 3. 3 or 4.
     }
 
-    if (context->raw_option.client_id != NULL) {
-        context->option.client_id = context->raw_option.client_id;
-    } else {
-        return MQTTCD_PARSE_ARG_FAILED;
-    }
+    if (context->raw_option.client_id == NULL) {
+        // default is host name
+        char hostname[24] = "mqttcd/"; // 23byte(without null), http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718031
+        int length = strlen(hostname);
 
-    if (context->raw_option.username != NULL) {
-        context->option.username = context->raw_option.username;
-    } else {
-        return MQTTCD_PARSE_ARG_FAILED;
-    }
+        if (gethostname(&hostname[length], sizeof(hostname) - length) != 0) {
+            strcpy(hostname, "mqttcd/empty"); // fallback
+        }
+        hostname[sizeof(hostname) - 1] = '\0'; // null terminate
 
-    if (context->raw_option.password != NULL) {
-        context->option.password = context->raw_option.password;
-    } else {
-        return MQTTCD_PARSE_ARG_FAILED;
+        length = strlen(hostname) + 1;
+        context->raw_option.client_id = malloc(length);
+        strncpy(context->raw_option.client_id, hostname, length);
     }
+    context->option.client_id = context->raw_option.client_id;
+
+    if (context->raw_option.username == NULL) {
+        // default is empty
+        context->raw_option.username = malloc(1);
+        context->raw_option.username[0] = '\0';
+    }
+    context->option.username = context->raw_option.username;
+
+    if (context->raw_option.password == NULL) {
+        // default is empty
+        context->raw_option.password = malloc(1);
+        context->raw_option.password[0] = '\0';
+    }
+    context->option.password = context->raw_option.password;
 
     if (context->raw_option.topic != NULL) {
         context->option.topic = context->raw_option.topic;
