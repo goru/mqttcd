@@ -70,18 +70,21 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
     }
 
     if (context->raw_option.client_id == NULL) {
-        // default is host name
-        char hostname[24] = "mqttcd/"; // 23byte(without null), http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718031
-        int length = strlen(hostname);
-
-        if (gethostname(&hostname[length], sizeof(hostname) - length) != 0) {
-            strcpy(hostname, "mqttcd/empty"); // fallback
+        // default is process id and host name
+        char client_id[24] = { 0 }; // 23byte(without null), http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html#_Toc398718031
+        pid_t pid = getpid();
+        char hostname[_POSIX_HOST_NAME_MAX] = { 0 };
+        if (gethostname(hostname, _POSIX_HOST_NAME_MAX) != 0) {
+            strcpy(hostname, "empty"); // fallback
         }
-        hostname[sizeof(hostname) - 1] = '\0'; // null terminate
 
-        length = strlen(hostname) + 1;
+        if (snprintf(client_id, 24, "mqttcd/%d-%s", pid, hostname) < 0) {
+            return MQTTCD_PARSE_ARG_FAILED;
+        }
+
+        int length = strlen(client_id) + 1;
         context->raw_option.client_id = malloc(length);
-        strncpy(context->raw_option.client_id, hostname, length);
+        strncpy(context->raw_option.client_id, client_id, length);
     }
     context->option.client_id = context->raw_option.client_id;
 
