@@ -66,7 +66,7 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
     if (context->raw_option.version != NULL) {
         context->option.version = atoi(context->raw_option.version);
     } else {
-        context->option.version = 3; // default is 3. 3 or 4.
+        context->option.version = 4; // default is 4. 3 or 4.
     }
 
     if (context->raw_option.client_id == NULL) {

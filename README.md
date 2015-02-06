@@ -23,7 +23,7 @@ Command line arguments
 | ----------- | -------- | --------------------- |
 | --host      | x        |                       |
 | --port      |          | default is 1883.      |
-| --version   |          | protocol version of MQTT.<br>3 ([3.1](http://public.dhe.ibm.com/software/dw/webservices/ws-mqtt/mqtt-v3r1.html)) or 4 ([3.1.1](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)). default is 3. |
+| --version   |          | protocol version of MQTT.<br>3 ([3.1](http://public.dhe.ibm.com/software/dw/webservices/ws-mqtt/mqtt-v3r1.html)) or 4 ([3.1.1](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)). default is 4. |
 | --client_id |          | if this argument is not specified, hostname is used as client id. |
 | --username  |          | default is empty.     |
 | --password  |          | default is empty.     |
