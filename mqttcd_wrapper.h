@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "MQTTPacket.h"
 #include "transport.h"
@@ -16,6 +17,7 @@ int mqtt_connect(mqttcd_context_t* context);
 void mqtt_disconnect(mqttcd_context_t* context);
 
 int mqtt_send(mqttcd_context_t* context, unsigned char* buf, int length);
+int mqtt_recv(mqttcd_context_t* context, unsigned char* buf, int length, int* packet_type);
 
 int mqtt_initialize_connection(mqttcd_context_t* context);
 int mqtt_read_publish(mqttcd_context_t* context, char** payload);
