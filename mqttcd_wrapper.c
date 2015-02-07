@@ -19,6 +19,27 @@ int mqtt_connect(mqttcd_context_t* context) {
     return MQTTCD_SUCCEEDED;
 }
 
+void mqtt_disconnect(mqttcd_context_t* context) {
+    // disconnect
+    logger_debug(context, "disconnect from mqtt broker... ");
+    transport_close(context->mqtt_socket);
+    logger_debug(context, "ok\n");
+}
+
+int mqtt_send(mqttcd_context_t* context, unsigned char* buf, int length) {
+    logger_debug(context, "sending packet... ");
+
+    int result = transport_sendPacketBuffer(context->mqtt_socket, buf, length);
+    if (result != length) {
+        logger_error(context, "couldn't send packet: %d\n", result);
+        return MQTTCD_SEND_PACKET_FAILED;
+    }
+
+    logger_debug(context, "ok\n");
+
+    return MQTTCD_SUCCEEDED;
+}
+
 int mqtt_initialize_connection(mqttcd_context_t* context) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
@@ -43,13 +64,10 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     logger_debug(context, "ok\n");
 
     // send connection data
-    logger_debug(context, "sending connect packet... ");
-    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
-    if (send_result != packet_len) {
-        logger_error(context, "couldn't send connect packet: %d\n", send_result);
-        return MQTTCD_SEND_PACKET_FAILED;
+    send_result = mqtt_send(context, buf, packet_len);
+    if (send_result != MQTTCD_SUCCEEDED) {
+        return send_result;
     }
-    logger_debug(context, "ok\n");
 
     // read connack packet from broker
     logger_debug(context, "reading connack packet... ");
@@ -79,13 +97,10 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     logger_debug(context, "ok\n");
 
     // send subscribe packet
-    logger_debug(context, "sending subscribe packet... ");
-    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
-    if (send_result != packet_len) {
-        logger_error(context, "couldn't send subscribe packet: %d\n", send_result);
-        return MQTTCD_SEND_PACKET_FAILED;
+    send_result = mqtt_send(context, buf, packet_len);
+    if (send_result != MQTTCD_SUCCEEDED) {
+        return send_result;
     }
-    logger_debug(context, "ok\n");
 
     // read suback packet from broker
     logger_debug(context, "reading suback packet... ");
@@ -161,13 +176,10 @@ int mqtt_send_ping(mqttcd_context_t* context) {
     logger_debug(context, "ok\n");
 
     // send ping packet for keep connection
-    logger_debug(context, "sending pingreq packet... ");
-    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
-    if (send_result != packet_len) {
-        logger_error(context, "couldn't send pingreq packet: %d\n", send_result);
-        return MQTTCD_SEND_PACKET_FAILED;
+    send_result = mqtt_send(context, buf, packet_len);
+    if (send_result != MQTTCD_SUCCEEDED) {
+        return send_result;
     }
-    logger_debug(context, "ok\n");
 
     // read pingresp packet from broker
     logger_debug(context, "reading pingresp packet... ");
@@ -196,21 +208,11 @@ int mqtt_finalize_connection(mqttcd_context_t* context) {
     logger_debug(context, "ok\n");
 
     // send disconnect packet
-    logger_debug(context, "sending disconnect packet... ");
-    send_result = transport_sendPacketBuffer(context->mqtt_socket, buf, packet_len);
-    if (send_result != packet_len) {
-        logger_error(context, "couldn't send disconnect packet: %d\n", send_result);
-        return MQTTCD_SEND_PACKET_FAILED;
+    send_result = mqtt_send(context, buf, packet_len);
+    if (send_result != MQTTCD_SUCCEEDED) {
+        return send_result;
     }
-    logger_debug(context, "ok\n");
 
     return MQTTCD_SUCCEEDED;
-}
-
-void mqtt_disconnect(mqttcd_context_t* context) {
-    // disconnect
-    logger_debug(context, "disconnect from mqtt broker... ");
-    transport_close(context->mqtt_socket);
-    logger_debug(context, "ok\n");
 }
 
