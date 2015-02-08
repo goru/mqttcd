@@ -56,28 +56,49 @@ int main(int argc, char** argv) {
 
     // initialize connection and subscribe mqtt topic
     ret = mqtt_initialize_connection(&context);
-    if (ret == MQTTCD_SUCCEEDED) {
-        // receive loop
-        int count = 0;
-        while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
-            char* payload = NULL;
-            ret = mqtt_read_publish(&context, &payload);
-            if (ret == MQTTCD_SUCCEEDED && payload != NULL) {
-                free(payload);
-            }
+    if (ret != MQTTCD_SUCCEEDED) {
+        logger_close(&context);
+        free_arguments(&context);
+        return ret;
+    }
 
-            if (count++ > 30) {
+    // receive loop
+    int count = 0;
+    while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
+        unsigned char buf[MQTTCD_BUFFER_LENGTH];
+        int packet_type;
+        ret = mqtt_recv(&context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
+        if (ret == MQTTCD_RECV_FAILED) {
+            logger_close(&context);
+            free_arguments(&context);
+            return ret;
+        }
+
+        if (ret == MQTTCD_RECV_TIMEOUT) {
+            if (count++ > MQTTCD_PING_INTERVAL) {
                 ret = mqtt_send_ping(&context);
                 if (ret != MQTTCD_SUCCEEDED) {
                     break;
                 }
                 count = 0;
             }
+            continue;
         }
 
-        // send disconnect packet
-        ret = mqtt_finalize_connection(&context);
+        // if (ret == MQTTCD_SUCCEEDED)
+        count = 0;
+
+        if (packet_type == PUBLISH) {
+            char* payload = NULL;
+            ret = mqtt_deserialize_publish(&context, buf, MQTTCD_BUFFER_LENGTH, &payload);
+            if (ret == MQTTCD_SUCCEEDED && payload != NULL) {
+                free(payload);
+            }
+        }
     }
+
+    // send disconnect packet
+    ret = mqtt_finalize_connection(&context);
 
     // disconnect from mqtt broker
     mqtt_disconnect(&context);

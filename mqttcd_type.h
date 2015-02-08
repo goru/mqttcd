@@ -5,7 +5,9 @@
 
 #include <stdio.h>
 
-#define BUFFER_LENGTH 4096
+#define MQTTCD_BUFFER_LENGTH 4096
+#define MQTTCD_KEEP_ALIVE    30
+#define MQTTCD_PING_INTERVAL 25
 
 enum mqttcd_status {
     MQTTCD_SUCCEEDED,

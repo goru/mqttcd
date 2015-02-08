@@ -58,13 +58,13 @@ int mqtt_recv(mqttcd_context_t* context, unsigned char* buf, int length, int* pa
         return MQTTCD_RECV_FAILED;
     }
 
-    logger_debug(context, "ok\n");
+    logger_debug(context, "ok: %d\n", *packet_type);
 
     return MQTTCD_SUCCEEDED;
 }
 
 int mqtt_initialize_connection(mqttcd_context_t* context) {
-    unsigned char buf[BUFFER_LENGTH];
+    unsigned char buf[MQTTCD_BUFFER_LENGTH];
     int packet_len;
     int result;
     int packet_type;
@@ -73,13 +73,13 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     MQTTPacket_connectData conn_data = MQTTPacket_connectData_initializer;
     conn_data.MQTTVersion = context->option.version;
     conn_data.clientID.cstring = context->option.client_id;
-    conn_data.keepAliveInterval = 20;
+    conn_data.keepAliveInterval = MQTTCD_KEEP_ALIVE;
     conn_data.cleansession = 1;
     conn_data.username.cstring = context->option.username;
     conn_data.password.cstring = context->option.password;
 
     logger_debug(context, "serializing connect packet... ");
-    packet_len = MQTTSerialize_connect(buf, BUFFER_LENGTH, &conn_data);
+    packet_len = MQTTSerialize_connect(buf, MQTTCD_BUFFER_LENGTH, &conn_data);
     if (packet_len <= 0) {
         logger_error(context, "couldn't serialize connect packet: %d\n", packet_len);
         return MQTTCD_SERIALIZE_FAILED;
@@ -93,7 +93,7 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     }
 
     // receive connack packet from broker
-    result = mqtt_recv(context, buf, BUFFER_LENGTH, &packet_type);
+    result = mqtt_recv(context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
     if (result != MQTTCD_SUCCEEDED) {
         return result;
     }
@@ -113,7 +113,7 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     int qos = 0;
 
     logger_debug(context, "serializing subscribe packet... ");
-    packet_len = MQTTSerialize_subscribe(buf, BUFFER_LENGTH, dup, msgid, count, &topic, &qos);
+    packet_len = MQTTSerialize_subscribe(buf, MQTTCD_BUFFER_LENGTH, dup, msgid, count, &topic, &qos);
     if (packet_len <= 0) {
         logger_error(context, "couldn't serialize subscribe packet: %d\n", packet_len);
         return MQTTCD_SERIALIZE_FAILED;
@@ -127,7 +127,7 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     }
 
     // receive suback packet from broker
-    result = mqtt_recv(context, buf, BUFFER_LENGTH, &packet_type);
+    result = mqtt_recv(context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
     if (result != MQTTCD_SUCCEEDED) {
         return result;
     }
@@ -140,13 +140,13 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
 }
 
 int mqtt_finalize_connection(mqttcd_context_t* context) {
-    unsigned char buf[BUFFER_LENGTH];
+    unsigned char buf[MQTTCD_BUFFER_LENGTH];
     int packet_len;
     int send_result;
 
     // create desconnect packet
     logger_debug(context, "serializing disconnect packet... ");
-    packet_len = MQTTSerialize_disconnect(buf, BUFFER_LENGTH);
+    packet_len = MQTTSerialize_disconnect(buf, MQTTCD_BUFFER_LENGTH);
     if (packet_len <= 0) {
         logger_error(context, "couldn't serialize disconnect packet: %d\n", packet_len);
         return MQTTCD_SERIALIZE_FAILED;
@@ -162,25 +162,7 @@ int mqtt_finalize_connection(mqttcd_context_t* context) {
     return MQTTCD_SUCCEEDED;
 }
 
-int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
-    unsigned char buf[BUFFER_LENGTH];
-    int packet_len;
-    int result;
-    int packet_type;
-
-    result = mqtt_recv(context, buf, BUFFER_LENGTH, &packet_type);
-    if (result != MQTTCD_SUCCEEDED) {
-        if (result == MQTTCD_RECV_FAILED) {
-            logger_debug(context, "couldn't receive publish packet\n");
-        }
-        return result;
-    }
-    if (packet_type != PUBLISH) {
-        logger_error(context, "couldn't receive publish packet: %d\n", packet_type);
-        return MQTTCD_PACKET_TYPE_MISMATCHED;
-    }
-
-    // deserialize received publish packet
+int mqtt_deserialize_publish(mqttcd_context_t* context, unsigned char* buf, int length, char** payload) {
     unsigned char pub_dup;
     int qos;
     unsigned char retained;
@@ -190,7 +172,7 @@ int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     int payloadlen_in;
 
     logger_debug(context, "deserializing publish packet... ");
-    result = MQTTDeserialize_publish(&pub_dup, &qos, &retained, &pub_msgid, &receivedTopic, &payload_in, &payloadlen_in, buf, BUFFER_LENGTH);
+    int result = MQTTDeserialize_publish(&pub_dup, &qos, &retained, &pub_msgid, &receivedTopic, &payload_in, &payloadlen_in, buf, length);
     if (result != 1) {
         logger_error(context, "couldn't deserialize publish packet: %d\n", result);
         return MQTTCD_DESERIALIZE_FAILED;
@@ -207,14 +189,13 @@ int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
 }
 
 int mqtt_send_ping(mqttcd_context_t* context) {
-    unsigned char buf[BUFFER_LENGTH];
+    unsigned char buf[MQTTCD_BUFFER_LENGTH];
     int packet_len;
     int result;
-    int packet_type;
 
     // create ping packet
     logger_debug(context, "serializing pingreq packet... ");
-    packet_len = MQTTSerialize_pingreq(buf, BUFFER_LENGTH);
+    packet_len = MQTTSerialize_pingreq(buf, MQTTCD_BUFFER_LENGTH);
     if (packet_len <= 0) {
         logger_error(context, "couldn't serialize pingreq packet: %d\n", packet_len);
         return MQTTCD_SERIALIZE_FAILED;
@@ -225,16 +206,6 @@ int mqtt_send_ping(mqttcd_context_t* context) {
     result = mqtt_send(context, buf, packet_len);
     if (result != MQTTCD_SUCCEEDED) {
         return result;
-    }
-
-    // receive pingresp packet from broker
-    result = mqtt_recv(context, buf, BUFFER_LENGTH, &packet_type);
-    if (result != MQTTCD_SUCCEEDED) {
-        return result;
-    }
-    if (packet_type != PINGRESP) {
-        logger_error(context, "couldn't receive pingresp packet: %d\n", packet_type);
-        return MQTTCD_PACKET_TYPE_MISMATCHED;
     }
 
     return MQTTCD_SUCCEEDED;
