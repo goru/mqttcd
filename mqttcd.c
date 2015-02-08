@@ -9,8 +9,7 @@ int main(int argc, char** argv) {
     // parse command line arguments
     ret = parse_arguments(&context, argc, argv);
     if (ret != MQTTCD_SUCCEEDED) {
-        free_arguments(&context);
-        return ret;
+        goto cleanup;
     }
 
     // daemonize
@@ -18,48 +17,42 @@ int main(int argc, char** argv) {
         int pid;
         ret = fork_current_process(&pid);
         if (ret != MQTTCD_SUCCEEDED) {
-            free_arguments(&context);
-            return ret;
+            goto cleanup;
         }
 
         // exit parent process with child process number
         if (pid != 0) {
             printf("%d\n", pid);
-            free_arguments(&context);
-            return MQTTCD_SUCCEEDED;
+            ret = MQTTCD_SUCCEEDED;
+            goto cleanup;
         }
     }
 
     // setup signal handler
     if (signal(SIGINT, signal_handler) == SIG_ERR) {
-        free_arguments(&context);
-        return MQTTCD_SETUP_SIGNAL_FAILED;
+        ret = MQTTCD_SETUP_SIGNAL_FAILED;
+        goto cleanup;
     }
     if (signal(SIGTERM, signal_handler) == SIG_ERR) {
-        free_arguments(&context);
-        return MQTTCD_SETUP_SIGNAL_FAILED;
+        ret = MQTTCD_SETUP_SIGNAL_FAILED;
+        goto cleanup;
     }
 
     ret = logger_open(&context);
     if (ret != MQTTCD_SUCCEEDED) {
-        free_arguments(&context);
-        return ret;
+        goto cleanup;
     }
 
     // connect to mqtt broker
     ret = mqtt_connect(&context);
     if (ret != MQTTCD_SUCCEEDED) {
-        logger_close(&context);
-        free_arguments(&context);
-        return ret;
+        goto disconnect;
     }
 
     // initialize connection and subscribe mqtt topic
     ret = mqtt_initialize_connection(&context);
     if (ret != MQTTCD_SUCCEEDED) {
-        logger_close(&context);
-        free_arguments(&context);
-        return ret;
+        goto disconnect;
     }
 
     // receive loop
@@ -69,16 +62,14 @@ int main(int argc, char** argv) {
         int packet_type;
         ret = mqtt_recv(&context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
         if (ret == MQTTCD_RECV_FAILED) {
-            logger_close(&context);
-            free_arguments(&context);
-            return ret;
+            goto disconnect;
         }
 
         if (ret == MQTTCD_RECV_TIMEOUT) {
             if (count++ > MQTTCD_PING_INTERVAL) {
                 ret = mqtt_send_ping(&context);
                 if (ret != MQTTCD_SUCCEEDED) {
-                    break;
+                    goto disconnect;
                 }
                 count = 0;
             }
@@ -101,13 +92,16 @@ int main(int argc, char** argv) {
     ret = mqtt_finalize_connection(&context);
 
     // disconnect from mqtt broker
+disconnect:
     mqtt_disconnect(&context);
 
-    // cleanup
     logger_close(&context);
+
+    // cleanup
+cleanup:
     free_arguments(&context);
 
-    return MQTTCD_SUCCEEDED;
+    return ret;
 }
 
 void signal_handler(int signum) {
