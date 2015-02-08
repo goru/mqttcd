@@ -139,6 +139,29 @@ int mqtt_initialize_connection(mqttcd_context_t* context) {
     return MQTTCD_SUCCEEDED;
 }
 
+int mqtt_finalize_connection(mqttcd_context_t* context) {
+    unsigned char buf[BUFFER_LENGTH];
+    int packet_len;
+    int send_result;
+
+    // create desconnect packet
+    logger_debug(context, "serializing disconnect packet... ");
+    packet_len = MQTTSerialize_disconnect(buf, BUFFER_LENGTH);
+    if (packet_len <= 0) {
+        logger_error(context, "couldn't serialize disconnect packet: %d\n", packet_len);
+        return MQTTCD_SERIALIZE_FAILED;
+    }
+    logger_debug(context, "ok\n");
+
+    // send disconnect packet
+    send_result = mqtt_send(context, buf, packet_len);
+    if (send_result != MQTTCD_SUCCEEDED) {
+        return send_result;
+    }
+
+    return MQTTCD_SUCCEEDED;
+}
+
 int mqtt_read_publish(mqttcd_context_t* context, char** payload) {
     unsigned char buf[BUFFER_LENGTH];
     int packet_len;
@@ -212,29 +235,6 @@ int mqtt_send_ping(mqttcd_context_t* context) {
     if (packet_type != PINGRESP) {
         logger_error(context, "couldn't receive pingresp packet: %d\n", packet_type);
         return MQTTCD_PACKET_TYPE_MISMATCHED;
-    }
-
-    return MQTTCD_SUCCEEDED;
-}
-
-int mqtt_finalize_connection(mqttcd_context_t* context) {
-    unsigned char buf[BUFFER_LENGTH];
-    int packet_len;
-    int send_result;
-
-    // create desconnect packet
-    logger_debug(context, "serializing disconnect packet... ");
-    packet_len = MQTTSerialize_disconnect(buf, BUFFER_LENGTH);
-    if (packet_len <= 0) {
-        logger_error(context, "couldn't serialize disconnect packet: %d\n", packet_len);
-        return MQTTCD_SERIALIZE_FAILED;
-    }
-    logger_debug(context, "ok\n");
-
-    // send disconnect packet
-    send_result = mqtt_send(context, buf, packet_len);
-    if (send_result != MQTTCD_SUCCEEDED) {
-        return send_result;
     }
 
     return MQTTCD_SUCCEEDED;
