@@ -29,15 +29,12 @@ int main(int argc, char** argv) {
     }
 
     // setup signal handler
-    if (signal(SIGINT, signal_handler) == SIG_ERR) {
-        ret = MQTTCD_SETUP_SIGNAL_FAILED;
-        goto cleanup;
-    }
-    if (signal(SIGTERM, signal_handler) == SIG_ERR) {
-        ret = MQTTCD_SETUP_SIGNAL_FAILED;
+    ret = setup_signal_handler();
+    if (ret != MQTTCD_SUCCEEDED) {
         goto cleanup;
     }
 
+    // setup logger
     ret = logger_open(&context);
     if (ret != MQTTCD_SUCCEEDED) {
         goto cleanup;
@@ -57,7 +54,7 @@ int main(int argc, char** argv) {
 
     // receive loop
     int count = 0;
-    while (MQTTCD_INTERRUPTED_SIGNAL == 0) {
+    while (signal_interrupted() == 0) {
         unsigned char buf[MQTTCD_BUFFER_LENGTH];
         int packet_type;
         ret = mqtt_recv(&context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
@@ -102,9 +99,5 @@ cleanup:
     free_arguments(&context);
 
     return ret;
-}
-
-void signal_handler(int signum) {
-    MQTTCD_INTERRUPTED_SIGNAL = 1;
 }
 
