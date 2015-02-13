@@ -3,11 +3,10 @@
 #include "mqttcd.h"
 
 int main(int argc, char** argv) {
-    int ret;
     mqttcd_context_t context;
 
     // parse command line arguments
-    ret = parse_arguments(&context, argc, argv);
+    int ret = parse_arguments(&context, argc, argv);
     if (ret != MQTTCD_SUCCEEDED) {
         goto cleanup;
     }
@@ -34,20 +33,29 @@ int main(int argc, char** argv) {
         goto cleanup;
     }
 
-    // setup logger
+    // start mqttcd
     ret = logger_open(&context);
-    if (ret != MQTTCD_SUCCEEDED) {
-        goto cleanup;
+    if (ret == MQTTCD_SUCCEEDED) {
+        ret = mqttcd(&context);
+        logger_close(&context);
     }
 
+cleanup:
+    // free parsed arguments
+    free_arguments(&context);
+
+    return ret;
+}
+
+int mqttcd(mqttcd_context_t* context) {
     // connect to mqtt broker
-    ret = mqtt_connect(&context);
+    int ret = mqtt_connect(context);
     if (ret != MQTTCD_SUCCEEDED) {
         goto disconnect;
     }
 
     // initialize connection and subscribe mqtt topic
-    ret = mqtt_initialize_connection(&context);
+    ret = mqtt_initialize_connection(context);
     if (ret != MQTTCD_SUCCEEDED) {
         goto disconnect;
     }
@@ -57,14 +65,14 @@ int main(int argc, char** argv) {
     while (signal_interrupted() == 0) {
         unsigned char buf[MQTTCD_BUFFER_LENGTH];
         int packet_type;
-        ret = mqtt_recv(&context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
+        ret = mqtt_recv(context, buf, MQTTCD_BUFFER_LENGTH, &packet_type);
         if (ret == MQTTCD_RECV_FAILED) {
             goto disconnect;
         }
 
         if (ret == MQTTCD_RECV_TIMEOUT) {
             if (count++ > MQTTCD_PING_INTERVAL) {
-                ret = mqtt_send_ping(&context);
+                ret = mqtt_send_ping(context);
                 if (ret != MQTTCD_SUCCEEDED) {
                     goto disconnect;
                 }
@@ -78,7 +86,7 @@ int main(int argc, char** argv) {
 
         if (packet_type == PUBLISH) {
             char* payload = NULL;
-            ret = mqtt_deserialize_publish(&context, buf, MQTTCD_BUFFER_LENGTH, &payload);
+            ret = mqtt_deserialize_publish(context, buf, MQTTCD_BUFFER_LENGTH, &payload);
             if (ret == MQTTCD_SUCCEEDED && payload != NULL) {
                 free(payload);
             }
@@ -86,18 +94,11 @@ int main(int argc, char** argv) {
     }
 
     // send disconnect packet
-    ret = mqtt_finalize_connection(&context);
+    ret = mqtt_finalize_connection(context);
 
-    // disconnect from mqtt broker
 disconnect:
-    mqtt_disconnect(&context);
-
-    logger_close(&context);
-
-    // cleanup
-cleanup:
-    free_arguments(&context);
+    // disconnect from mqtt broker
+    mqtt_disconnect(context);
 
     return ret;
 }
-

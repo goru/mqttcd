@@ -9,3 +9,6 @@
 #include "mqttcd_fork.h"
 #include "mqttcd_signal.h"
 #include "mqtt_wrapper.h"
+
+int main(int argc, char** argv);
+int mqttcd(mqttcd_context_t* context);
