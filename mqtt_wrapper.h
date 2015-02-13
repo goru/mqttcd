@@ -1,7 +1,7 @@
 /* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=4 : */
 
-#ifndef mqttcd_wrapper_h
-#define mqttcd_wrapper_h
+#ifndef mqtt_wrapper_h
+#define mqtt_wrapper_h
 
 #include <stdlib.h>
 #include <string.h>

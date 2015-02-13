@@ -7,8 +7,8 @@
 #include "mqttcd_type.h"
 #include "mqttcd_logger.h"
 #include "mqttcd_arg.h"
-#include "mqttcd_wrapper.h"
 #include "mqttcd_fork.h"
+#include "mqtt_wrapper.h"
 
 static int MQTTCD_INTERRUPTED_SIGNAL = 0;
 void signal_handler(int signum);

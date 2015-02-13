@@ -1,6 +1,6 @@
 /* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=4 : */
 
-#include "mqttcd_wrapper.h"
+#include "mqtt_wrapper.h"
 
 int mqtt_connect(mqttcd_context_t* context) {
     logger_debug(context, "connecting to mqtt broker... ");
