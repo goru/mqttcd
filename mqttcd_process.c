@@ -33,3 +33,12 @@ int mqttcd_process_fork(int* pid) {
 
     return MQTTCD_SUCCEEDED;
 }
+
+int mqttcd_process_set_close_on_exec(int fd) {
+    int ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
+    if (ret == 0) {
+        return MQTTCD_SUCCEEDED;
+    } else {
+        return MQTTCD_FCNTL_FAILED;
+    }
+}

@@ -11,6 +11,12 @@ int logger_open(mqttcd_context_t* context) {
         if (fp == NULL) {
             return MQTTCD_OPEN_FAILED;
         }
+
+        int ret = mqttcd_process_set_close_on_exec(fileno(fp));
+        if (ret != MQTTCD_SUCCEEDED) {
+            return ret;
+        }
+
         context->logger = fp;
 #else
         openlog(NULL, LOG_PID, LOG_DAEMON);

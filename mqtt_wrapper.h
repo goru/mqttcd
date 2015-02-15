@@ -12,6 +12,7 @@
 
 #include "mqttcd_type.h"
 #include "mqttcd_logger.h"
+#include "mqttcd_process.h"
 
 int mqtt_connect(mqttcd_context_t* context);
 void mqtt_disconnect(mqttcd_context_t* context);

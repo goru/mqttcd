@@ -12,6 +12,12 @@ int mqtt_connect(mqttcd_context_t* context) {
         return MQTTCD_OPEN_FAILED;
     }
 
+    int ret = mqttcd_process_set_close_on_exec(sock);
+    if (ret != MQTTCD_SUCCEEDED) {
+        logger_error(context, "couldn't set close-on-exec\n");
+        return ret;
+    }
+
     context->mqtt_socket = sock;
 
     logger_debug(context, "ok\n");

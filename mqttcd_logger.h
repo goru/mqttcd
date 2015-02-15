@@ -11,6 +11,7 @@
 #endif
 
 #include "mqttcd_type.h"
+#include "mqttcd_process.h"
 
 int logger_open(mqttcd_context_t* context);
 void logger_close(mqttcd_context_t* context);
