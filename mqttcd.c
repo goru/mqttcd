@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     // daemonize
     if (context.option.daemonize == 1) {
         int pid;
-        ret = fork_current_process(&pid);
+        ret = mqttcd_process_fork(&pid);
         if (ret != MQTTCD_SUCCEEDED) {
             goto cleanup;
         }

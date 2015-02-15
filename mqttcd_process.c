@@ -1,8 +1,8 @@
 /* vim: set et fenc=utf-8 ff=unix ts=4 sw=4 sts=4 : */
 
-#include "mqttcd_fork.h"
+#include "mqttcd_process.h"
 
-int fork_current_process(int* pid) {
+int mqttcd_process_fork(int* pid) {
     int ret = fork();
 
     // fork is failed
