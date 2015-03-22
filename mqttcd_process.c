@@ -42,3 +42,13 @@ int mqttcd_process_set_close_on_exec(int fd) {
         return MQTTCD_FCNTL_FAILED;
     }
 }
+
+int mqttcd_process_execuve(const char* filename, char* const argv[], char* const envp[]) {
+    int ret = execve(filename, argv, envp);
+    if (ret == -1) {
+        return MQTTCD_EXECUVE_FAILED;
+    }
+
+    // this line is not executed
+    return MQTTCD_SUCCEEDED;
+}

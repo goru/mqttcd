@@ -13,6 +13,7 @@
 
 int mqttcd_process_fork(int* pid);
 int mqttcd_process_set_close_on_exec(int fd);
+int mqttcd_process_execuve(const char* filename, char* const argv[], char* const envp[]);
 
 #endif
 

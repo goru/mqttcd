@@ -21,7 +21,13 @@ enum mqttcd_status {
     MQTTCD_RECV_FAILED,
     MQTTCD_RECV_TIMEOUT,
     MQTTCD_PACKET_TYPE_MISMATCHED,
-    MQTTCD_FCNTL_FAILED
+    MQTTCD_FCNTL_FAILED,
+    MQTTCD_EXECUVE_FAILED
+};
+
+enum mqttcd_handler_type {
+    MQTTCD_HANDLER_NOP,
+    MQTTCD_HANDLER_STRING
 };
 
 typedef struct _mqttcd_raw_option {
@@ -33,6 +39,8 @@ typedef struct _mqttcd_raw_option {
     char* password;
     char* topic;
     char* daemonize;
+    char* handler;
+    char* handler_dir;
 } mqttcd_raw_option_t;
 
 typedef struct _mqttcd_option {
@@ -44,6 +52,8 @@ typedef struct _mqttcd_option {
     char* password;
     char* topic;
     int daemonize;
+    int handler;
+    char* handler_dir;
 } mqttcd_option_t;
 
 typedef struct _mqttcd_context {

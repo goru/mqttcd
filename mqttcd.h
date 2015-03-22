@@ -12,3 +12,4 @@
 
 int main(int argc, char** argv);
 int mqttcd(mqttcd_context_t* context);
+int execute_message_handler(mqttcd_context_t* context, char* payload);

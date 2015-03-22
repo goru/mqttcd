@@ -4,15 +4,17 @@
 
 int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
     struct option options[] = {
-        { "host",      required_argument, NULL, 0 },
-        { "port",      required_argument, NULL, 0 },
-        { "version",   required_argument, NULL, 0 },
-        { "client_id", required_argument, NULL, 0 },
-        { "username",  required_argument, NULL, 0 },
-        { "password",  required_argument, NULL, 0 },
-        { "topic",     required_argument, NULL, 0 },
-        { "daemonize", no_argument,       NULL, 0 },
-        { 0,           0,                 0,    0 }
+        { "host",        required_argument, NULL, 0 },
+        { "port",        required_argument, NULL, 0 },
+        { "version",     required_argument, NULL, 0 },
+        { "client_id",   required_argument, NULL, 0 },
+        { "username",    required_argument, NULL, 0 },
+        { "password",    required_argument, NULL, 0 },
+        { "topic",       required_argument, NULL, 0 },
+        { "daemonize",   no_argument,       NULL, 0 },
+        { "handler",     required_argument, NULL, 0 },
+        { "handler_dir", required_argument, NULL, 0 },
+        { 0,             0,                 0,    0 }
     };
 
     char** raw_options[] = {
@@ -23,7 +25,9 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
         &context->raw_option.username,
         &context->raw_option.password,
         &context->raw_option.topic,
-        &context->raw_option.daemonize
+        &context->raw_option.daemonize,
+        &context->raw_option.handler,
+        &context->raw_option.handler_dir
     };
 
     // initialize variables
@@ -114,6 +118,23 @@ int parse_arguments(mqttcd_context_t* context, int argc, char** argv) {
         context->option.daemonize = 0; // default is not daemonize
     }
 
+    if (context->raw_option.handler != NULL) {
+        if (strcmp(context->raw_option.handler, "nop") == 0) {
+            context->option.handler = MQTTCD_HANDLER_NOP;
+        }
+        if (strcmp(context->raw_option.handler, "string") == 0) {
+            context->option.handler = MQTTCD_HANDLER_STRING;
+        }
+    } else {
+        context->option.handler = MQTTCD_HANDLER_NOP; // default is nop
+    }
+
+    if (context->raw_option.handler_dir == NULL) {
+        // default is current directory
+        context->raw_option.handler_dir = realpath("./handlers", NULL);
+    }
+    context->option.handler_dir = context->raw_option.handler_dir;
+
     return MQTTCD_SUCCEEDED;
 }
 
@@ -126,7 +147,9 @@ int free_arguments(mqttcd_context_t* context) {
         &context->raw_option.username,
         &context->raw_option.password,
         &context->raw_option.topic,
-        &context->raw_option.daemonize
+        &context->raw_option.daemonize,
+        &context->raw_option.handler,
+        &context->raw_option.handler_dir
     };
 
     int i;

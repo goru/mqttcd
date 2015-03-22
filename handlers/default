@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# topic name
+echo $1 >/dev/null
+# received payload
+echo $2 >/dev/null

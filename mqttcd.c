@@ -88,6 +88,9 @@ int mqttcd(mqttcd_context_t* context) {
             char* payload = NULL;
             ret = mqtt_deserialize_publish(context, buf, MQTTCD_BUFFER_LENGTH, &payload);
             if (ret == MQTTCD_SUCCEEDED && payload != NULL) {
+                if (context->option.handler != MQTTCD_HANDLER_NOP) {
+                    execute_message_handler(context, payload);
+                }
                 free(payload);
             }
         }
@@ -99,6 +102,39 @@ int mqttcd(mqttcd_context_t* context) {
 disconnect:
     // disconnect from mqtt broker
     mqtt_disconnect(context);
+
+    return ret;
+}
+
+int execute_message_handler(mqttcd_context_t* context, char* payload) {
+    // prepare path of handler
+    char* handler_dir = context->option.handler_dir;
+    char* handler_name = "default";
+
+    int path_len = strlen(handler_dir) + 1 + strlen(handler_name) + 1;
+    char* path = malloc(path_len);
+    if (snprintf(path, path_len, "%s/%s", handler_dir, handler_name) < 0) {
+        // error
+    }
+
+    // fork
+    int pid;
+    int ret = mqttcd_process_fork(&pid);
+    if (ret != MQTTCD_SUCCEEDED) {
+        return ret;
+    }
+
+    // parent process
+    if (pid != 0) {
+        free(path);
+        return ret;
+    }
+
+    // child process
+    const char* filename = path;
+    char* const argv[] = { handler_name, context->option.topic, payload, NULL };
+    char* const envp[] = { NULL };
+    ret = mqttcd_process_execuve(filename, argv, envp);
 
     return ret;
 }
